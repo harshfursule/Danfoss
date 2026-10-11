@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hydraulic Twin – 3D Physics Digital Twin & Telemetry Stream</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#f0f7ff',
+                100: '#e0effe',
+                500: '#0284c7',
+                600: '#0369a1',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Industrial Annotation Badge & Leader Line */
+      .t3lbl-wrapper {
+        position: absolute;
+        pointer-events: none;
+        transform: translate(-50%, -100%);
+        white-space: nowrap;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        z-index: 15;
+      }
+      .t3lbl {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255, 255, 255, 0.94);
+        color: #1e293b;
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        padding: 3px 7px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 2px 5px -1px rgba(0, 0, 0, 0.08), 0 1px 3px -1px rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(4px);
+      }
+      .t3lbl-pin {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background-color: #0284c7;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 2px;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+      }
+      /* Custom clean light scrollbar */
+      ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f8fafc;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-800 antialiased overflow-hidden font-sans select-none">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
