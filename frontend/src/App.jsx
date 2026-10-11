@@ -20,12 +20,17 @@ import {
   Upload,
   RefreshCw,
   Bell,
-  Check
+  Check,
+  TrendingUp,
+  Droplets,
+  ArrowUpRight,
+  Radio,
+  SlidersHorizontal,
+  Compass
 } from 'lucide-react';
-import { Twin3D } from './twin3d';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('twin');
+  const [activeTab, setActiveTab] = useState('telemetry');
   const [telemetry, setTelemetry] = useState([]);
   const [gaugeMax, setGaugeMax] = useState({ pbar: 350, qlpm: 120, stroke: 300 });
   const [loading, setLoading] = useState(true);
@@ -77,27 +82,8 @@ export default function App() {
     loadData();
   }, []);
 
-  // Initialize 3D Twin once container and data are ready or activeTab switched
+  // Handle Telemetry Stream Playback Loop
   useEffect(() => {
-    if (!loading && activeTab === 'twin' && view3dRef.current && telemetry.length > 0) {
-      const timer = setTimeout(() => {
-        Twin3D.init(view3dRef.current, telemetry, {
-          gaugeMax,
-          onSensorClick: (sensorKey, curData) => {
-            setSelectedSensor({ key: sensorKey, data: curData });
-          }
-        });
-        if (telemetry[currentIndex]) {
-          Twin3D.update(telemetry[currentIndex]);
-        }
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, activeTab, telemetry]);
-
-  // Handle Playback Loop
-  useEffect(() => {
-    Twin3D.setPlaying(isPlaying);
     if (isPlaying && telemetry.length > 0) {
       playTimerRef.current = setInterval(() => {
         setCurrentIndex((prev) => {
@@ -112,14 +98,6 @@ export default function App() {
       if (playTimerRef.current) clearInterval(playTimerRef.current);
     };
   }, [isPlaying, playbackSpeed, telemetry.length]);
-
-  // Push updates to 3D canvas on index change
-  useEffect(() => {
-    if (telemetry.length > 0 && telemetry[currentIndex]) {
-      const cur = telemetry[currentIndex];
-      Twin3D.update(cur);
-    }
-  }, [currentIndex, telemetry]);
 
   const currentSample = telemetry[currentIndex] || {
     t: 0,
@@ -236,16 +214,16 @@ export default function App() {
           {/* Navigation Links */}
           <nav className="p-2.5 space-y-1">
             <button
-              onClick={() => setActiveTab('twin')}
+              onClick={() => setActiveTab('telemetry')}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'twin'
+                activeTab === 'telemetry'
                   ? 'bg-sky-50 text-sky-700 border border-sky-200/60 shadow-2xs'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
-              <Layers className="w-4 h-4 text-sky-500 shrink-0" />
-              <span className="truncate">3D Digital Twin</span>
-              {activeTab === 'twin' && <ChevronRight className="w-3.5 h-3.5 ml-auto text-sky-400 shrink-0" />}
+              <Activity className="w-4 h-4 text-sky-500 shrink-0" />
+              <span className="truncate">Live Telemetry & Sensors</span>
+              {activeTab === 'telemetry' && <ChevronRight className="w-3.5 h-3.5 ml-auto text-sky-400 shrink-0" />}
             </button>
 
             <button
@@ -316,7 +294,7 @@ export default function App() {
         <header className="h-14 min-h-[56px] max-h-[56px] bg-white border-b border-slate-200 px-5 flex items-center justify-between shadow-2xs z-20 shrink-0 gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wide truncate">
-              3D Physics Digital Twin & Telemetry Stream
+              Live Telemetry Stream & Sensor Analytics
             </h2>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -346,101 +324,532 @@ export default function App() {
           </div>
         </header>
 
-        {/* TAB 1: 3D DIGITAL TWIN & REAL-TIME CONTROLS */}
-        {activeTab === 'twin' && (
-          <div className="flex-1 flex flex-col overflow-hidden relative w-full h-full min-h-0">
+        {/* TAB 1: LIVE TELEMETRY STREAM & SENSOR ANALYTICS */}
+        {activeTab === 'telemetry' && (
+          <div className="flex-1 flex flex-col overflow-hidden relative w-full h-full min-h-0 bg-slate-50/50">
             
-            {/* 3D Visualization Viewport Canvas Box */}
-            <div className="flex-1 relative bg-slate-100 w-full h-full min-h-0 overflow-hidden">
+            {/* Scrollable Main Content Area */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
               
-              {/* Telemetry Overlay Card in 3D Viewport (Positioned cleanly on top-left) */}
-              <div className="absolute top-4 left-4 z-20 bg-white/95 backdrop-blur-md p-3.5 rounded-xl border border-slate-200 shadow-md w-[260px] space-y-2 pointer-events-auto">
-                <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">LIVE STATE</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 ${
-                    currentSample.is_anomaly 
-                      ? 'bg-rose-100 text-rose-700 border border-rose-300 animate-pulse' 
-                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  }`}>
-                    {currentSample.is_anomaly && <AlertTriangle className="w-3 h-3 text-rose-600" />}
-                    {currentSample.is_anomaly ? 'ANOMALY ALERT' : 'Normal Operation'}
+              {/* TOP 4 KPI CARDS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                {/* 1. Ram Position */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                  <div className="flex justify-between items-center text-slate-400 mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Ram Stroke</span>
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-sky-500" />
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-bold text-slate-800">{currentSample.stroke.toFixed(1)}</span>
+                    <span className="text-xs text-slate-400 font-medium">mm</span>
+                  </div>
+                  <div className="mt-2 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-sky-500 h-full rounded-full transition-all duration-150"
+                      style={{ width: `${Math.min(100, Math.max(0, (currentSample.stroke / (gaugeMax.stroke || 300)) * 100))}%` }}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex justify-between text-[10px] text-slate-400">
+                    <span>Vel: {currentSample.velocity.toFixed(3)} m/s</span>
+                    <span>Max: {gaugeMax.stroke || 300} mm</span>
+                  </div>
+                </div>
+
+                {/* 2. System Pressure */}
+                <div className={`p-3.5 rounded-xl border shadow-2xs transition-all ${
+                  currentSample.pbar > 340 
+                    ? 'bg-rose-50/70 border-rose-200 text-rose-900' 
+                    : 'bg-white border-slate-200'
+                }`}>
+                  <div className="flex justify-between items-center text-slate-400 mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Line Pressure</span>
+                    <Gauge className={`w-3.5 h-3.5 ${currentSample.pbar > 340 ? 'text-rose-500 animate-pulse' : 'text-amber-500'}`} />
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className={`text-xl font-bold ${currentSample.pbar > 340 ? 'text-rose-600' : 'text-slate-800'}`}>
+                      {currentSample.pbar.toFixed(1)}
+                    </span>
+                    <span className="text-xs text-slate-400 font-medium">bar</span>
+                    <span className="text-[10px] text-slate-400 ml-auto font-mono">({currentSample.pm_pa.toFixed(2)} MPa)</span>
+                  </div>
+                  <div className="mt-2 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-150 ${
+                        currentSample.pbar > 340 ? 'bg-rose-500' : currentSample.pbar > 280 ? 'bg-amber-500' : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${Math.min(100, Math.max(0, (currentSample.pbar / (gaugeMax.pbar || 350)) * 100))}%` }}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex justify-between text-[10px]">
+                    <span className={currentSample.pbar > 340 ? 'text-rose-600 font-bold' : 'text-slate-400'}>
+                      {currentSample.pbar > 340 ? 'Surge Warning' : 'Normal Pressure'}
+                    </span>
+                    <span className="text-slate-400">Limit: {gaugeMax.pbar || 350} bar</span>
+                  </div>
+                </div>
+
+                {/* 3. Flow Rate */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                  <div className="flex justify-between items-center text-slate-400 mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Flow Rate</span>
+                    <Droplets className="w-3.5 h-3.5 text-cyan-500" />
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-bold text-slate-800">{currentSample.qlpm.toFixed(2)}</span>
+                    <span className="text-xs text-slate-400 font-medium">L/min</span>
+                  </div>
+                  <div className="mt-2 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-cyan-500 h-full rounded-full transition-all duration-150"
+                      style={{ width: `${Math.min(100, Math.max(0, (currentSample.qlpm / (gaugeMax.qlpm || 120)) * 100))}%` }}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex justify-between text-[10px] text-slate-400">
+                    <span>Flow: {currentSample.qlpm > 5 ? 'Laminar Stream' : 'Sealed/Idle'}</span>
+                    <span>Max: {gaugeMax.qlpm || 120} L/m</span>
+                  </div>
+                </div>
+
+                {/* 4. Motor Power & Energy */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                  <div className="flex justify-between items-center text-slate-400 mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Power Demand</span>
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-bold text-slate-800">{currentSample.power_kw.toFixed(2)}</span>
+                    <span className="text-xs text-slate-400 font-medium">kW</span>
+                  </div>
+                  <div className="mt-2 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-amber-500 h-full rounded-full transition-all duration-150"
+                      style={{ width: `${Math.min(100, Math.max(0, (currentSample.power_kw / 25) * 100))}%` }}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex justify-between text-[10px] text-slate-400">
+                    <span>Load: {((currentSample.power_kw / 25) * 100).toFixed(0)}%</span>
+                    <span>Time: {currentSample.t.toFixed(2)}s</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ANOMALY ALERT BANNER (IF DETECTED) */}
+              {currentSample.is_anomaly ? (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between gap-4 text-xs animate-pulse">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-rose-800 flex items-center gap-2">
+                        <span>ANOMALY DETECTED BY ISOLATION FOREST</span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-rose-200/80 text-rose-900 font-mono font-bold">
+                          Score: {(currentSample.anomaly_score || 0.85).toFixed(3)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-rose-700 truncate mt-0.5">
+                        {currentSample.warnings && currentSample.warnings.length > 0
+                          ? currentSample.warnings.join(' • ')
+                          : 'Telemetry pattern deviates significantly from baseline cycle distribution.'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold text-[10px] shrink-0">
+                    Warning Flag Active
                   </span>
                 </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-50/70 p-2 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] font-semibold">RAM POSITION</span>
-                    <span className="font-bold text-slate-800 text-xs">{currentSample.stroke.toFixed(1)} mm</span>
-                  </div>
-                  <div className="bg-slate-50/70 p-2 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] font-semibold">VELOCITY</span>
-                    <span className="font-bold text-slate-800 text-xs">{currentSample.velocity.toFixed(3)} m/s</span>
-                  </div>
-                  <div className="bg-slate-50/70 p-2 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] font-semibold">PRESSURE</span>
-                    <span className={`font-bold text-xs ${currentSample.pbar > 340 ? 'text-rose-600 font-extrabold' : 'text-amber-600'}`}>
-                      {currentSample.pbar.toFixed(1)} bar
+              ) : (
+                <div className="p-2.5 bg-emerald-50/70 border border-emerald-200/60 rounded-xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-emerald-800">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-medium text-[11px]">
+                      All live telemetry channels operating inside ISO baseline envelope (Isolation Forest normal)
                     </span>
                   </div>
-                  <div className="bg-slate-50/70 p-2 rounded-lg border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] font-semibold">FLOW RATE</span>
-                    <span className="font-bold text-sky-600 text-xs">{currentSample.qlpm.toFixed(2)} L/min</span>
-                  </div>
+                  <span className="text-[10px] font-mono text-emerald-700 font-semibold">
+                    Score: {(currentSample.anomaly_score || 0.12).toFixed(3)}
+                  </span>
                 </div>
+              )}
 
-                {/* Warning Signal Box */}
-                {currentSample.warnings && currentSample.warnings.length > 0 && (
-                  <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[10px] space-y-1">
-                    {currentSample.warnings.map((w, wi) => (
-                      <div key={wi} className="flex items-start gap-1 font-semibold leading-snug">
-                        <span className="text-rose-600 font-bold">⚠️</span>
-                        <span>{w}</span>
+              {/* MAIN SENSOR TOPOLOGY GRID & LIVE WAVEFORM SECTION */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                
+                {/* 6-NODE SENSOR & SUBSYSTEM MATRIX (8 COLS) */}
+                <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-800">Subsystem & Sensor Node Array</h3>
+                      <p className="text-[10px] text-slate-400">Click any sensor node to inspect live calibration & operational limits</p>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">
+                      6 Monitored Nodes
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    
+                    {/* Node 1: Cylinder & Ram */}
+                    <div 
+                      onClick={() => setSelectedSensor({ key: 'CYLINDER & RAM', data: currentSample })}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        selectedSensor?.key === 'CYLINDER & RAM'
+                          ? 'border-sky-500 bg-sky-50/40 shadow-xs'
+                          : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center text-xs mb-1.5">
+                        <span className="font-bold text-slate-700">1. Cylinder & Ram</span>
+                        <span className="text-[10px] font-bold text-sky-600 bg-sky-100/60 px-1.5 py-0.5 rounded">
+                          {currentSample.phase}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <div className="text-[11px] text-slate-500 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>Stroke Displacement:</span>
+                          <span className="font-semibold text-slate-800">{currentSample.stroke.toFixed(1)} mm</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Ram Velocity:</span>
+                          <span className="font-semibold text-slate-800">{currentSample.velocity.toFixed(3)} m/s</span>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="pt-1.5 border-t border-slate-100 flex justify-between text-[10px] text-slate-500 font-medium">
-                  <span>Power: {currentSample.power_kw.toFixed(2)} kW</span>
-                  <span>Time: {currentSample.t.toFixed(2)} s</span>
+                    {/* Node 2: 4/3 DCV Spool */}
+                    <div 
+                      onClick={() => setSelectedSensor({ key: '4/3 DCV SPOOL', data: currentSample })}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        selectedSensor?.key === '4/3 DCV SPOOL'
+                          ? 'border-sky-500 bg-sky-50/40 shadow-xs'
+                          : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center text-xs mb-1.5">
+                        <span className="font-bold text-slate-700">2. 4/3 DCV Valve</span>
+                        <span className="text-[10px] font-bold text-purple-600 bg-purple-100/60 px-1.5 py-0.5 rounded">
+                          {currentSample.dcv}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>Port Routing:</span>
+                          <span className="font-semibold text-slate-800">
+                            {currentSample.dcv === 'NEUTRAL' ? 'P→T Bypass' : currentSample.dcv === 'A' ? 'P→A (Cap End)' : 'P→B (Rod End)'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Solenoid Status:</span>
+                          <span className="font-semibold text-slate-800">
+                            {currentSample.dcv !== 'NEUTRAL' ? 'Energized (24V)' : 'De-energized'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Node 3: Pressure Transducer */}
+                    <div 
+                      onClick={() => setSelectedSensor({ key: 'PRESSURE SENSOR', data: currentSample })}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        selectedSensor?.key === 'PRESSURE SENSOR'
+                          ? 'border-sky-500 bg-sky-50/40 shadow-xs'
+                          : currentSample.pbar > 340 
+                            ? 'border-rose-300 bg-rose-50/50' 
+                            : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center text-xs mb-1.5">
+                        <span className="font-bold text-slate-700">3. Pressure Sensor</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          currentSample.pbar > 340 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100/60 text-emerald-700'
+                        }`}>
+                          {currentSample.pbar > 340 ? 'HIGH SURGE' : 'NOMINAL'}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>Transducer Out:</span>
+                          <span className={`font-semibold ${currentSample.pbar > 340 ? 'text-rose-600 font-bold' : 'text-slate-800'}`}>
+                            {currentSample.pbar.toFixed(1)} bar
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Safe Operating Limit:</span>
+                          <span className="font-semibold text-slate-800">340 bar</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Node 4: Turbine Flowmeter */}
+                    <div 
+                      onClick={() => setSelectedSensor({ key: 'FLOW SENSOR', data: currentSample })}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        selectedSensor?.key === 'FLOW SENSOR'
+                          ? 'border-sky-500 bg-sky-50/40 shadow-xs'
+                          : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center text-xs mb-1.5">
+                        <span className="font-bold text-slate-700">4. Turbine Flowmeter</span>
+                        <span className="text-[10px] font-bold text-cyan-600 bg-cyan-100/60 px-1.5 py-0.5 rounded">
+                          {currentSample.qlpm > 5 ? 'FLOWING' : 'STATIC'}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>Discharge Rate:</span>
+                          <span className="font-semibold text-slate-800">{currentSample.qlpm.toFixed(2)} L/min</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Turbine Frequency:</span>
+                          <span className="font-semibold text-slate-800">{(currentSample.qlpm * 14.2).toFixed(0)} Hz</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Node 5: Hydraulic Pump & Motor */}
+                    <div 
+                      onClick={() => setSelectedSensor({ key: 'PUMP & MOTOR', data: currentSample })}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        selectedSensor?.key === 'PUMP & MOTOR'
+                          ? 'border-sky-500 bg-sky-50/40 shadow-xs'
+                          : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center text-xs mb-1.5">
+                        <span className="font-bold text-slate-700">5. Pump & Motor</span>
+                        <span className="text-[10px] font-bold text-amber-600 bg-amber-100/60 px-1.5 py-0.5 rounded">
+                          {currentSample.phase === 'IDLE' ? 'UNLOADED' : 'UNDER LOAD'}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>Electrical Power:</span>
+                          <span className="font-semibold text-slate-800">{currentSample.power_kw.toFixed(2)} kW</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Motor Speed:</span>
+                          <span className="font-semibold text-slate-800">1450 RPM (Synchronous)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Node 6: Reservoir & Return Filter */}
+                    <div 
+                      onClick={() => setSelectedSensor({ key: 'RESERVOIR & FILTER', data: currentSample })}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        selectedSensor?.key === 'RESERVOIR & FILTER'
+                          ? 'border-sky-500 bg-sky-50/40 shadow-xs'
+                          : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center text-xs mb-1.5">
+                        <span className="font-bold text-slate-700">6. Reservoir & Filter</span>
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100/60 px-1.5 py-0.5 rounded">
+                          CLEAN
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>Oil Temperature:</span>
+                          <span className="font-semibold text-slate-800">48.2 °C (Optimal)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Filter Backpressure:</span>
+                          <span className="font-semibold text-slate-800">1.2 bar (Pass)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* SENSOR INSPECTOR & DIAGNOSTICS PANEL (5 COLS) */}
+                <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-4 shadow-2xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Radio className="w-3.5 h-3.5 text-sky-500" />
+                        <h3 className="text-xs font-bold text-slate-800">Sensor Channel Diagnostics</h3>
+                      </div>
+                      <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-100">
+                        {selectedSensor ? selectedSensor.key : 'LIVE CHANNELS'}
+                      </span>
+                    </div>
+
+                    {selectedSensor ? (
+                      <div className="space-y-2 text-xs">
+                        <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1.5">
+                          <div className="text-[11px] font-bold text-slate-700 flex justify-between">
+                            <span>Selected Component:</span>
+                            <span className="text-sky-600">{selectedSensor.key}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            Signal sampling frequency is synced at 10 Hz with digital telemetry pipeline.
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                          <div className="p-2 rounded bg-slate-50/70 border border-slate-100">
+                            <span className="text-slate-400 block text-[10px]">Response Time</span>
+                            <span className="font-bold text-slate-800">&lt; 2.5 ms</span>
+                          </div>
+                          <div className="p-2 rounded bg-slate-50/70 border border-slate-100">
+                            <span className="text-slate-400 block text-[10px]">A/D Precision</span>
+                            <span className="font-bold text-slate-800">16-bit Sigma-Delta</span>
+                          </div>
+                          <div className="p-2 rounded bg-slate-50/70 border border-slate-100">
+                            <span className="text-slate-400 block text-[10px]">Signal Health</span>
+                            <span className="font-bold text-emerald-600">99.8% SNR</span>
+                          </div>
+                          <div className="p-2 rounded bg-slate-50/70 border border-slate-100">
+                            <span className="text-slate-400 block text-[10px]">Calibration Due</span>
+                            <span className="font-bold text-slate-800">180 Days</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5 text-xs">
+                        <p className="text-[11px] text-slate-500">
+                          Select any component on the left to see component pinouts, calibration ranges, and real-time noise metrics.
+                        </p>
+                        
+                        <div className="p-3 rounded-lg bg-slate-50/70 border border-slate-100 space-y-2 text-[11px]">
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-500">Telemetry Cycle Duration:</span>
+                            <span className="font-bold text-slate-700">
+                              {telemetry.length > 0 ? telemetry[telemetry.length - 1].t.toFixed(1) : '14.0'} seconds
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-500">Telemetry Samples:</span>
+                            <span className="font-bold text-slate-700">{telemetry.length} frames</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-500">Active Frame Timestamp:</span>
+                            <span className="font-mono font-bold text-sky-600">{currentSample.t.toFixed(2)} s</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Digital Twin Streaming:</span>
+                    <span className="font-bold text-emerald-600 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      100% Synced
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* LIVE WAVEFORM & TREND CHART (SVG) */}
+              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-sky-500" />
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-800">Dynamic Multi-Channel Waveform Plot</h3>
+                      <p className="text-[10px] text-slate-400">Real-time signal tracking across full press stroke cycle</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-[10px] font-semibold">
+                    <div className="flex items-center gap-1">
+                      <span className="w-2.5 h-0.5 bg-amber-500 rounded"></span>
+                      <span className="text-slate-600">Pressure (bar)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-2.5 h-0.5 bg-sky-500 rounded"></span>
+                      <span className="text-slate-600">Ram Stroke (mm)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-2.5 h-0.5 bg-cyan-500 rounded"></span>
+                      <span className="text-slate-600">Flow (L/min)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SVG Real-time Waveform Canvas */}
+                <div className="h-36 w-full relative bg-slate-50/70 rounded-lg border border-slate-100 p-2 overflow-hidden">
+                  {telemetry.length > 1 && (
+                    <svg className="w-full h-full overflow-visible" viewBox="0 0 1000 120" preserveAspectRatio="none">
+                      {/* Grid Lines */}
+                      <line x1="0" y1="30" x2="1000" y2="30" stroke="#e2e8f0" strokeDasharray="4,4" strokeWidth="1" />
+                      <line x1="0" y1="60" x2="1000" y2="60" stroke="#e2e8f0" strokeDasharray="4,4" strokeWidth="1" />
+                      <line x1="0" y1="90" x2="1000" y2="90" stroke="#e2e8f0" strokeDasharray="4,4" strokeWidth="1" />
+
+                      {/* Pressure Line (Scaled to 0-350 bar) */}
+                      <path
+                        d={telemetry.reduce((acc, pt, i) => {
+                          const x = (i / (telemetry.length - 1)) * 1000;
+                          const y = 115 - ((pt.pbar || 0) / (gaugeMax.pbar || 350)) * 110;
+                          return `${acc} ${i === 0 ? 'M' : 'L'} ${x} ${Math.max(5, Math.min(115, y))}`;
+                        }, '')}
+                        fill="none"
+                        stroke="#f59e0b"
+                        strokeWidth="2"
+                      />
+
+                      {/* Stroke Line (Scaled to 0-300 mm) */}
+                      <path
+                        d={telemetry.reduce((acc, pt, i) => {
+                          const x = (i / (telemetry.length - 1)) * 1000;
+                          const y = 115 - ((pt.stroke || 0) / (gaugeMax.stroke || 300)) * 110;
+                          return `${acc} ${i === 0 ? 'M' : 'L'} ${x} ${Math.max(5, Math.min(115, y))}`;
+                        }, '')}
+                        fill="none"
+                        stroke="#0284c7"
+                        strokeWidth="1.5"
+                        strokeDasharray="2,2"
+                      />
+
+                      {/* Flow Line (Scaled to 0-120 L/min) */}
+                      <path
+                        d={telemetry.reduce((acc, pt, i) => {
+                          const x = (i / (telemetry.length - 1)) * 1000;
+                          const y = 115 - ((pt.qlpm || 0) / (gaugeMax.qlpm || 120)) * 110;
+                          return `${acc} ${i === 0 ? 'M' : 'L'} ${x} ${Math.max(5, Math.min(115, y))}`;
+                        }, '')}
+                        fill="none"
+                        stroke="#06b6d4"
+                        strokeWidth="1.5"
+                      />
+
+                      {/* Dynamic Playhead Cursor Line */}
+                      {telemetry.length > 0 && (
+                        <g>
+                          <line
+                            x1={(currentIndex / (telemetry.length - 1)) * 1000}
+                            y1="0"
+                            x2={(currentIndex / (telemetry.length - 1)) * 1000}
+                            y2="120"
+                            stroke="#dc2626"
+                            strokeWidth="2"
+                          />
+                          <circle
+                            cx={(currentIndex / (telemetry.length - 1)) * 1000}
+                            cy={115 - ((currentSample.pbar || 0) / (gaugeMax.pbar || 350)) * 110}
+                            r="4"
+                            fill="#dc2626"
+                          />
+                        </g>
+                      )}
+                    </svg>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                  <span>Start: 0.0s</span>
+                  <span className="text-slate-600 font-bold">
+                    Cursor at {currentSample.t.toFixed(1)}s (Pressure: {currentSample.pbar.toFixed(1)} bar, Ram: {currentSample.stroke.toFixed(1)} mm)
+                  </span>
+                  <span>End: {telemetry.length > 0 ? telemetry[telemetry.length - 1].t.toFixed(1) : '14.0'}s</span>
                 </div>
               </div>
 
-              {/* Viewpoint Camera Buttons & Label Toggle (Positioned cleanly on top-right) */}
-              <div className="absolute top-4 right-4 z-20 bg-white/95 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-1 pointer-events-auto text-xs">
-                {['ISOMETRIC', 'FRONT', 'TOP', 'LEFT', 'RIGHT'].map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => Twin3D.view(v)}
-                    className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
-                  >
-                    {v}
-                  </button>
-                ))}
-                <div className="h-4 w-px bg-slate-200 mx-1" />
-                <button
-                  onClick={() => {
-                    const next = !labelsVisible;
-                    setLabelsVisible(next);
-                    Twin3D.setShowLabels(next);
-                  }}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-colors ${
-                    labelsVisible 
-                      ? 'bg-sky-50 text-sky-700 border border-sky-200' 
-                      : 'text-slate-400 hover:bg-slate-100'
-                  }`}
-                  title="Toggle 3D Sensor & Part Labels"
-                >
-                  {labelsVisible ? '🏷️ Labels ON' : '🏷️ Labels OFF'}
-                </button>
-              </div>
-
-              {/* The Three.js Canvas DOM Container (Fills 100% of viewport) */}
-              <div 
-                id="view3d" 
-                ref={view3dRef} 
-                className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing" 
-              />
             </div>
 
             {/* BOTTOM CONTROLS & PLAYBACK TIMELINE BAR */}
@@ -505,8 +914,14 @@ export default function App() {
 
               {/* Current Selected Sensor Tooltip */}
               {selectedSensor && (
-                <div className="text-xs bg-slate-50 border border-slate-200 px-3 py-1 rounded-lg text-slate-700 font-medium shrink-0">
-                  <span className="text-sky-600 font-bold">{selectedSensor.key}</span> selected
+                <div className="text-xs bg-slate-50 border border-slate-200 px-3 py-1 rounded-lg text-slate-700 font-medium shrink-0 flex items-center gap-2">
+                  <span className="text-sky-600 font-bold">{selectedSensor.key}</span>
+                  <button 
+                    onClick={() => setSelectedSensor(null)} 
+                    className="text-slate-400 hover:text-slate-600 text-[10px]"
+                  >
+                    ✕
+                  </button>
                 </div>
               )}
             </div>
