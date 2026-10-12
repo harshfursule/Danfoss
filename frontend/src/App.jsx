@@ -107,6 +107,9 @@ const TelemetryGraphTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+// Base API URL: Supports Vercel deployment with VITE_API_URL, falls back to local proxy in dev
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('twin');
   const [telemetry, setTelemetry] = useState([]);
@@ -150,8 +153,8 @@ export default function App() {
   const loadData = async () => {
     try {
       const [telRes, pdmRes] = await Promise.all([
-        fetch('/api/telemetry'),
-        fetch('/api/pdm-summary')
+        fetch(`${API_BASE}/api/telemetry`),
+        fetch(`${API_BASE}/api/pdm-summary`)
       ]);
       const telJson = await telRes.json();
       const pdmJson = await pdmRes.json();
@@ -243,7 +246,7 @@ export default function App() {
     formData.append('file', file);
 
     try {
-      const res = await fetch('/api/upload-csv', {
+      const res = await fetch(`${API_BASE}/api/upload-csv`, {
         method: 'POST',
         body: formData
       });
@@ -265,7 +268,7 @@ export default function App() {
 
   const handlePredictWhatIf = async () => {
     try {
-      const res = await fetch('/api/predict', {
+      const res = await fetch(`${API_BASE}/api/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(simForm)
